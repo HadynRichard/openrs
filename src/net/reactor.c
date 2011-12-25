@@ -9,7 +9,6 @@
 #include <string.h>
 #include <fcntl.h>
 
-int epfd;
 struct epoll_event *events;
 int serversockfd;
 
@@ -92,7 +91,7 @@ void do_accept() {
 	struct epoll_event *ev = malloc(sizeof(struct epoll_event));
 	struct client *c = malloc(sizeof(struct client));
 	ev->data.fd = sockfd;
-	ev->events = EPOLLIN | EPOLLHUP;
+	ev->events = EPOLLIN;
 	ev->data.ptr = c;
 	if (epoll_ctl(epfd, EPOLL_CTL_ADD, sockfd, ev) < 0) {
 		perror("epoll_ctl()");
@@ -107,6 +106,7 @@ void do_accept() {
 void reactor_poll() {
 	int i;
 	int nfds = epoll_wait(epfd, events, MAX_CLIENTS, 0);
+	printf("Received %d events\n", nfds);
 	for (i = 0; i < nfds; i++) {
 		// Handle accepting an incoming connection.
 		if (events[i].data.fd == serversockfd) {
@@ -119,14 +119,6 @@ void reactor_poll() {
 			// Handle writing data.
 			else if (events[i].events & EPOLLOUT)
 				do_write((struct client *) events[i].data.ptr);
-			
-			// Handle a shutdown socket.
-			else if (events[i].events & EPOLLHUP) {
-				struct client *c = (struct client *) events[i].data.ptr;
-				printf("Closing connection from %s\n", inet_ntoa(c->addr->sin_addr));
-				close(c->sockfd);
-				free_client(c);
-			}
 		}
 	}
 }

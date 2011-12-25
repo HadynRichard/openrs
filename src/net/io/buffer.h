@@ -5,8 +5,8 @@
 
 #define BUFFER_SIZE 4096
 
-#define DCAB_ENDIAN 0
-#define ABCD_ENDIAN 1
+#define ENDIAN_BIG 0
+#define ENDIAN_LITTLE 1
 
 #define X_NONE 0
 #define X_ADD 1

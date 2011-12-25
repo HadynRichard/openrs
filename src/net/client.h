@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include "buffer.h"
 #include "packet.h"
+#include "player.h"
 
 // Client states
 #define DISCONNECTED 0
@@ -22,6 +23,7 @@ struct client {
 	struct buffer *in_buffer;
 	struct buffer *out_buffer;
 	struct packet *packet;
+	struct player *player;
 };
 
 // Initializes a client.
@@ -29,6 +31,8 @@ void init_client(struct client *c);
 
 // Frees the memory of a client.
 void free_client(struct client *c);
+
+void client_send(struct client *c, struct buffer *b);
 
 // Performs a read operation.
 void do_read(struct client *c);

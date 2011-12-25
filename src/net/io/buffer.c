@@ -6,6 +6,7 @@ void init_buffer(struct buffer *b) {
 	b->capacity = BUFFER_SIZE;
 	b->data = (char *) malloc(BUFFER_SIZE);
 	b->position = 0;
+	b->size = 0;
 }
 
 void free_buffer(struct buffer *b) {
@@ -26,8 +27,9 @@ char *get_string(struct buffer *b) {
 	char *str = malloc(256);
 	int idx = 0;
 	char c;
-	while ((c = get_byte(b, X_NONE)) != '\10' && idx < 256)
-		str[idx] = c;
+	while ((c = get_byte(b, X_NONE)) != '\n' && idx < 256)
+		str[idx++] = c;
+	str[idx] = '\0';
 	return str;
 }
 
@@ -74,11 +76,11 @@ void put_byte(struct buffer *b, int32_t value, int xform) {
 int32_t get_short(struct buffer *b, int endian, int xform) {
 	int32_t value = 0;
 	switch (endian) {
-	case DCAB_ENDIAN:
+	case ENDIAN_BIG:
 		value |= (get_byte(b, X_NONE) & 0xff) << 8;
 		value |= (get_byte(b, xform) & 0xff);
 		break;
-	case ABCD_ENDIAN:
+	case ENDIAN_LITTLE:
 		value |= (get_byte(b, xform) & 0xff);
 		value |= (get_byte(b, X_NONE) & 0xff) << 8;
 		break;
@@ -88,11 +90,11 @@ int32_t get_short(struct buffer *b, int endian, int xform) {
 
 void put_short(struct buffer *b, int32_t value, int endian, int xform) {
 	switch (endian) {
-	case DCAB_ENDIAN:
+	case ENDIAN_BIG:
 		put_byte(b, value >> 8, X_NONE);
 		put_byte(b, value, xform);
 		break;
-	case ABCD_ENDIAN:
+	case ENDIAN_LITTLE:
 		put_byte(b, value, xform);
 		put_byte(b, value >> 8, X_NONE);
 		break;
@@ -102,13 +104,13 @@ void put_short(struct buffer *b, int32_t value, int endian, int xform) {
 int32_t get_int(struct buffer *b, int endian, int xform) {
 	int32_t value = 0;
 	switch (endian) {
-	case DCAB_ENDIAN:
+	case ENDIAN_BIG:
 		value |= (get_byte(b, X_NONE) & 0xff) << 24;
 		value |= (get_byte(b, X_NONE) & 0xff) << 16;
 		value |= (get_byte(b, X_NONE) & 0xff) << 8;
 		value |= (get_byte(b, xform) & 0xff);
 		break;
-	case ABCD_ENDIAN:
+	case ENDIAN_LITTLE:
 		value |= (get_byte(b, xform) & 0xff);
 		value |= (get_byte(b, X_NONE) & 0xff) << 8;
 		value |= (get_byte(b, X_NONE) & 0xff) << 16;
@@ -120,13 +122,13 @@ int32_t get_int(struct buffer *b, int endian, int xform) {
 
 void put_int(struct buffer *b, int32_t value, int endian, int xform) {
 	switch (endian) {
-	case DCAB_ENDIAN:
+	case ENDIAN_BIG:
 		put_byte(b, value >> 24, X_NONE);
 		put_byte(b, value >> 16, X_NONE);
 		put_byte(b, value >> 8, X_NONE);
 		put_byte(b, value, xform);
 		break;
-	case ABCD_ENDIAN:
+	case ENDIAN_LITTLE:
 		put_byte(b, value, xform);
 		put_byte(b, value >> 8, X_NONE);
 		put_byte(b, value >> 16, X_NONE);
@@ -138,7 +140,7 @@ void put_int(struct buffer *b, int32_t value, int endian, int xform) {
 int64_t get_long(struct buffer *b, int endian, int xform) {
 	int64_t value = 0;
 	switch (endian) {
-	case DCAB_ENDIAN:
+	case ENDIAN_BIG:
 		value |= (int64_t) (get_byte(b, X_NONE) & 0xff) << 56L;
 		value |= (int64_t) (get_byte(b, X_NONE) & 0xff) << 48L;
 		value |= (int64_t) (get_byte(b, X_NONE) & 0xff) << 40L;
@@ -148,7 +150,7 @@ int64_t get_long(struct buffer *b, int endian, int xform) {
 		value |= (int64_t) (get_byte(b, X_NONE) & 0xff) << 8L;
 		value |= (int64_t) (get_byte(b, xform) & 0xff);
 		break;
-	case ABCD_ENDIAN:
+	case ENDIAN_LITTLE:
 		value |= (int64_t) (get_byte(b, xform) & 0xff);
 		value |= (int64_t) (get_byte(b, X_NONE) & 0xff) << 8L;
 		value |= (int64_t) (get_byte(b, X_NONE) & 0xff) << 16L;
@@ -164,7 +166,7 @@ int64_t get_long(struct buffer *b, int endian, int xform) {
 
 void put_long(struct buffer *b, int64_t value, int endian, int xform) {
 	switch (endian) {
-	case DCAB_ENDIAN:
+	case ENDIAN_BIG:
 		put_byte(b, value >> 56L, X_NONE);
 		put_byte(b, value >> 48L, X_NONE);
 		put_byte(b, value >> 40L, X_NONE);
@@ -174,7 +176,7 @@ void put_long(struct buffer *b, int64_t value, int endian, int xform) {
 		put_byte(b, value >> 8L, X_NONE);
 		put_byte(b, value, xform);
 		break;
-	case ABCD_ENDIAN:
+	case ENDIAN_LITTLE:
 		put_byte(b, value, xform);
 		put_byte(b, value >> 8, X_NONE);
 		put_byte(b, value >> 16, X_NONE);

@@ -1,7 +1,9 @@
 #include "client.h"
 
 #include "decoder.h"
+#include "reactor.h"
 
+#include <sys/epoll.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -31,6 +33,17 @@ void free_client(struct client *c) {
 	free(c);
 }
 
+void client_send(struct client *c, struct buffer *b) {
+	// Queue the data into the outgoing buffer.
+	int i;
+	for (i = 0; i < b->position; i++)
+		put_byte(c->out_buffer, b->data[i], X_NONE);
+		
+	// Flag write interest with epoll.
+	c->epollev->events |= EPOLLOUT;
+	epoll_ctl(epfd, EPOLL_CTL_MOD, c->sockfd, c->epollev);
+}
+
 void do_read(struct client *c) {
 	// Read the data into a temporary buffer.
 	char data[256];
@@ -50,13 +63,13 @@ void do_read(struct client *c) {
 	// Decode the login process.
 	if (c->state == CONNECTED || c->state == LOGGING_IN) {
 		login_decode(c, c->in_buffer);
-	} else {	
+	} else if (c->state == LOGGED_IN) {
 		// Decode the game stream.
 		while (c->in_buffer->size - 1 > c->in_buffer->position)
 			decode(c, c->in_buffer);
 	}
 	
-	// Shift the remaining data to the beginning of the buffer.
+	// Shift the unread data to the beginning of the buffer.
 	int position = 0;
 	for (i = c->in_buffer->position; i < c->in_buffer->size - 1; i++)
 		c->in_buffer->data[position++] = (char) get_byte(c->in_buffer, X_NONE);
@@ -65,5 +78,18 @@ void do_read(struct client *c) {
 }
 
 void do_write(struct client *c) {
-	// TODO: Send queued data
+	// Send the data along the socket.
+	int amtsent = send(c->sockfd, c->out_buffer->data, c->out_buffer->position, 0);
+	
+	// Shift the unsent data to the beginning of the buffer.
+	int i, ctr = 0;
+	for (i = amtsent; i < c->out_buffer->position; i++)
+		c->out_buffer->data[ctr++] = c->out_buffer->data[i];
+	c->out_buffer->position = ctr;
+	
+	// Remove write interest if we have no more data to send.
+	if (ctr == 0) {
+		c->epollev->events &= ~EPOLLOUT;
+		epoll_ctl(epfd, EPOLL_CTL_MOD, c->sockfd, c->epollev);
+	}
 }

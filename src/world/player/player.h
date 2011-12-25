@@ -2,7 +2,8 @@
 #define PLAYER_H
 
 struct player {
-	struct client *c;
+	int id;
+	struct client *client;
 	char *username;
 	char *password;
 };

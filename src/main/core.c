@@ -11,6 +11,7 @@ void core_run() {
 	// Main server loop.
 	for (;;) {
 		gettimeofday(&start, NULL);
+		printf("tick\n");
 		
 		// First, handle network events.
 		reactor_poll();
