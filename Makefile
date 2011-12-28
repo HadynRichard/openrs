@@ -1,7 +1,7 @@
 CC := gcc
 LD := gcc
 
-MODULES := main net world script net/io world/player net/codec
+MODULES := main net world script net/io world/player net/codec net/util
 SRC_DIR := $(addprefix src/,$(MODULES))
 BUILD_DIR := $(addprefix build/,$(MODULES))
 
@@ -21,12 +21,15 @@ endef
 
 .PHONY: all checkdirs clean
 
-all: clean checkdirs openrs
+all: clean checkdirs openrs pyapi
 
 openrs: $(OBJ)
 	$(LD) $^ -o $@ -l$(PYTHON_LIB)
 
 checkdirs: $(BUILD_DIR)
+
+pyapi:
+	$(CC) -shared -fPIC $(INCLUDES) -I$(PYTHON_DIR) -l$(PYTHON_LIB) -o data/scripts/pyapi.so src/script/api/pyapi.c
 
 $(BUILD_DIR):
 	@mkdir -p $@

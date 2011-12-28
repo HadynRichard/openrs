@@ -21,6 +21,10 @@ void init_client(struct client *c) {
 	// Initialize the packet.
 	c->packet = malloc(sizeof(struct packet));
 	init_packet(c->packet);
+	
+	// Initialize the ciphers to 0 for now.
+	c->in_cipher = 0;
+	c->out_cipher = 0;
 }
 
 void free_client(struct client *c) {
@@ -30,6 +34,10 @@ void free_client(struct client *c) {
 	free_buffer(c->in_buffer);
 	free_buffer(c->out_buffer);
 	free_packet(c->packet);
+	if (c->in_cipher)
+		free(c->in_cipher);
+	if (c->out_cipher)
+		free(c->out_cipher);
 	free(c);
 }
 
@@ -66,7 +74,8 @@ void do_read(struct client *c) {
 	} else if (c->state == LOGGED_IN) {
 		// Decode the game stream.
 		while (c->in_buffer->size - 1 > c->in_buffer->position)
-			decode(c, c->in_buffer);
+			if (!decode(c, c->in_buffer))
+				break;
 	}
 	
 	// Shift the unread data to the beginning of the buffer.

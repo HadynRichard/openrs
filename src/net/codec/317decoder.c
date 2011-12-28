@@ -1,29 +1,63 @@
+#include "script_loader.h"
+
 #include "decoder.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "world.h"
 #include "player.h"
+#include "script_loader.h"
+#include "isaac_rand.h"
 
-void decode(struct client *c, struct buffer *b) {
+static int packet_sizes[] = {
+	0, 0, 0, 1, -1, 0, 0, 0, 0, 0, // 0
+	0, 0, 0, 0, 8, 0, 6, 2, 2, 0,  // 10
+	0, 2, 0, 6, 0, 12, 0, 0, 0, 0, // 20
+	0, 0, 0, 0, 0, 8, 4, 0, 0, 2,  // 30
+	2, 6, 0, 6, 0, -1, 0, 0, 0, 0, // 40
+	0, 0, 0, 12, 0, 0, 0, 0, 8, 0, // 50
+	0, 8, 0, 0, 0, 0, 0, 0, 0, 0,  // 60
+	6, 0, 2, 2, 8, 6, 0, -1, 0, 6, // 70
+	0, 0, 0, 0, 0, 1, 4, 6, 0, 0,  // 80
+	0, 0, 0, 0, 0, 3, 0, 0, -1, 0, // 90
+	0, 13, 0, -1, 0, 0, 0, 0, 0, 0,// 100
+	0, 0, 0, 0, 0, 0, 0, 6, 0, 0,  // 110
+	1, 0, 6, 0, 0, 0, -1, 0, 2, 6, // 120
+	0, 4, 6, 8, 0, 6, 0, 0, 0, 2,  // 130
+	0, 0, 0, 0, 0, 6, 0, 0, 0, 0,  // 140
+	0, 0, 1, 2, 0, 2, 6, 0, 0, 0,  // 150
+	0, 0, 0, 0, -1, -1, 0, 0, 0, 0,// 160
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 170
+	0, 8, 0, 3, 0, 2, 0, 0, 8, 1,  // 180
+	0, 0, 12, 0, 0, 0, 0, 0, 0, 0, // 190
+	2, 0, 0, 0, 0, 0, 0, 0, 4, 0,  // 200
+	4, 0, 0, 0, 7, 8, 0, 0, 10, 0, // 210
+	0, 0, 0, 0, 0, 0, -1, 0, 6, 0, // 220
+	1, 0, 0, 0, 6, 0, 6, 8, 1, 0,  // 230
+	0, 4, 0, 0, 0, 0, -1, 0, -1, 4,// 240
+	0, 0, 6, 6, 0, 0, 0            // 250
+};
+
+int decode(struct client *c, struct buffer *b) {
 	struct packet *packet = c->packet;
 	
 	// Decode the opcode.
 	if (packet->opcode == -1) {
 		if (b->size - b->position - 1 < 1)
-				return; // Not enough data to read the byte
+				return 0; // Not enough data to read the byte
 		packet->opcode = get_byte(b, X_NONE) & 0xff;
-		// TODO: ISAAC decryption
+		packet->opcode = packet->opcode - isaac_next_int(c->in_cipher) & 0xff;
 	}
 	
 	// Decode the length.
 	if (packet->length == -1) {
-		packet->length = 0; // TODO: Pull it from a packet length array.
+		packet->length = packet_sizes[packet->opcode];
 	 	
 	 	// Decode a variable-sized packet.
 		if (packet->length == -1) {
 			if (b->size - b->position - 1 < 1)
-				return; // Not enough data to read the byte
+				return 0; // Not enough data to read the byte
 			packet->length = get_byte(b, X_NONE) & 0xff;
 		}
 		
@@ -31,11 +65,13 @@ void decode(struct client *c, struct buffer *b) {
 		packet->payload->size = packet->length;
 	}
 	
+	printf("length: %d", packet->length);
+	
 	// Ensure that all of the data has arrived.
 	if ((b->size - b->position - 1) < packet->length)
-		return; // Not enough data.
+		return 0; // Not enough data.
 	
-	// Fill the packet payload with data from the buffer.	
+	// Fill the packet payload with data from the buffer.
 	int idx;
 	for (idx = 0; idx < packet->length; idx++)
 		put_byte(packet->payload, get_byte(b, X_NONE), X_NONE);
@@ -48,6 +84,7 @@ void decode(struct client *c, struct buffer *b) {
 	packet->length = -1;
 	packet->payload->size = 0;
 	packet->payload->position = 0;
+	return 1;
 }
 
 void login_decode(struct client *c, struct buffer *b) {
@@ -138,7 +175,12 @@ void login_decode(struct client *c, struct buffer *b) {
 		isaac_seed[1] = (int32_t) (client_key);
 		isaac_seed[2] = (int32_t) (server_key >> 32);
 		isaac_seed[3] = (int32_t) (server_key);
-		// TODO: init_isaac
+		c->in_cipher = malloc(sizeof(struct isaac_context));
+		init_isaac(c->in_cipher, isaac_seed);
+		for (i = 0; i < 4; i++)
+			isaac_seed[i] += 50;
+		c->out_cipher = malloc(sizeof(struct isaac_context));
+		init_isaac(c->out_cipher, isaac_seed);
 		
 		// Initialize the player.
 		struct player *p = malloc(sizeof(struct player));
@@ -148,6 +190,9 @@ void login_decode(struct client *c, struct buffer *b) {
 		p->password = get_string(b);
 		p->client = c;
 		c->player = p;
+		world_register(p);
+		
+		printf("%s", p->username);
 		
 		// Send the response
 		init_buffer(&out);
@@ -156,6 +201,10 @@ void login_decode(struct client *c, struct buffer *b) {
 		put_byte(&out, 0, X_NONE);
 		client_send(c, &out);
 		c->state = LOGGED_IN;
+		
+		// Notify the Python scripting system of this event.
+		PyObject *func = PyDict_GetItemString(py_dict, "on_login");
+		PyObject_CallFunction(func, "i", p->id);
 		break;
 	}
 }

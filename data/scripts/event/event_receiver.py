@@ -15,8 +15,14 @@ event_map = { }
 
 def on(event_type, *listeners):
 	""" Register a series of functions for handling a specific event type. """
-	if event_map[event_type] == None: event_map[event_type] = []
-	for listener in listeners: event_map[event_type].append(listener)
+	
+	# Initialize the event listener list if it isn't present
+	if event_type not in event_map:
+		event_map[event_type] = []
+		
+	# Add the listeners to the listener list
+	for listener in listeners:
+		event_map[event_type].append(listener)
 
 def broadcast(event_type, event):
 	""" Broadcast the event to all interested listeners. """

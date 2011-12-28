@@ -6,7 +6,7 @@
 #include "packet.h"
 
 // Decodes the buffer into a packet.
-void decode(struct client *c, struct buffer *b);
+int decode(struct client *c, struct buffer *b);
 
 // Decodes the login process.
 void login_decode(struct client *c, struct buffer *b);

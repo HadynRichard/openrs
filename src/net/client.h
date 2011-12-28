@@ -2,9 +2,11 @@
 #define CLIENT_H
 
 #include <netinet/in.h>
+
 #include "buffer.h"
 #include "packet.h"
 #include "player.h"
+#include "isaac_rand.h"
 
 // Client states
 #define DISCONNECTED 0
@@ -22,6 +24,8 @@ struct client {
 	struct epoll_event *epollev;
 	struct buffer *in_buffer;
 	struct buffer *out_buffer;
+	struct isaac_context *in_cipher;
+	struct isaac_context *out_cipher;
 	struct packet *packet;
 	struct player *player;
 };

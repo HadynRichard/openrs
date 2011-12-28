@@ -5,7 +5,11 @@
 
 #include "player.h"
 
-struct player *players;
+struct player **players;
+
+void world_register(struct player *p);
+
+void world_unregister(struct player *p);
 
 void world_init();
 

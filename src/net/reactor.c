@@ -106,7 +106,6 @@ void do_accept() {
 void reactor_poll() {
 	int i;
 	int nfds = epoll_wait(epfd, events, MAX_CLIENTS, 0);
-	printf("Received %d events\n", nfds);
 	for (i = 0; i < nfds; i++) {
 		// Handle accepting an incoming connection.
 		if (events[i].data.fd == serversockfd) {

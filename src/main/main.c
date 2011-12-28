@@ -8,6 +8,11 @@ int main(void) {
 	// Perform the startup procedure.
 	printf("Starting OpenRS emulator...\n");
 	
+	// First initialize the world.
+	printf("\tInitializing the game world\t");
+	world_init();
+	printf("\t\t[OK]\n");
+	
 	// Initialize the script system.
 	printf("\tLoading Python scripting system\t");
 	if (!load_scripts()) {
