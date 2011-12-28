@@ -192,8 +192,6 @@ void login_decode(struct client *c, struct buffer *b) {
 		c->player = p;
 		world_register(p);
 		
-		printf("%s", p->username);
-		
 		// Send the response
 		init_buffer(&out);
 		put_byte(&out, 2, X_NONE);
