@@ -55,7 +55,7 @@ int load_scripts() {
 	Py_Initialize();
 	
 	// Initialize the library
-	Py_InitModule("libpyapi", pyapi_methods);
+	Py_InitModule("libpyapi", pyapi_functions);
 	PyRun_SimpleString("from libpyapi import *");
 	
 	py_module = PyImport_AddModule("__main__");

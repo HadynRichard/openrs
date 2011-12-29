@@ -202,7 +202,7 @@ void login_decode(struct client *c, struct buffer *b) {
 		
 		// Notify the Python scripting system of this event.
 		PyObject *func = PyDict_GetItemString(py_dict, "on_login");
-		PyObject_CallFunction(func, "i", p->id);
+		PyObject_CallFunction(func, "l", p);
 		break;
 	}
 }
