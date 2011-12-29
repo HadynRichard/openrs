@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <dirent.h>
 
+#include "libpyapi.h"
+
 int load_from(PyObject *py_dict, char* path) {
 	char apath[8192];
 	DIR *dir;
@@ -51,6 +53,11 @@ int load_scripts() {
 	// Initialize Python
 	Py_SetProgramName("OpenRS");
 	Py_Initialize();
+	
+	// Initialize the library
+	Py_InitModule("libpyapi", pyapi_methods);
+	PyRun_SimpleString("from libpyapi import *");
+	
 	py_module = PyImport_AddModule("__main__");
 	py_dict = PyModule_GetDict(py_module);
 	

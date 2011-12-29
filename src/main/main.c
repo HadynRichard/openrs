@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "reactor.h"
+#include "world.h"
 
 int main(void) {
 	// Perform the startup procedure.
