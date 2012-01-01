@@ -116,7 +116,7 @@ void reactor_poll() {
 				do_read((struct client *) events[i].data.ptr);
 			
 			// Handle writing data.
-			else if (events[i].events & EPOLLOUT)
+			if (events[i].events & EPOLLOUT)
 				do_write((struct client *) events[i].data.ptr);
 		}
 	}

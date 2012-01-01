@@ -1,7 +1,7 @@
 CC := gcc -fPIC
 LD := gcc -fPIC
 
-MODULES := main net world script net/io world/player net/codec net/util
+MODULES := main net world script util net/io world/player net/codec net/util
 SRC_DIR := $(addprefix src/,$(MODULES))
 BUILD_DIR := $(addprefix build/,$(MODULES))
 

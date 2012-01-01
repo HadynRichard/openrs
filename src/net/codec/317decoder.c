@@ -44,10 +44,11 @@ int decode(struct client *c, struct buffer *b) {
 	
 	// Decode the opcode.
 	if (packet->opcode == -1) {
-		if (b->size - b->position - 1 < 1)
-				return 0; // Not enough data to read the byte
+		if (b->size - (b->position + 1) < 1)
+			return 0; // Not enough data to read the byte
 		packet->opcode = get_byte(b, X_NONE) & 0xff;
 		packet->opcode = packet->opcode - isaac_next_int(c->in_cipher) & 0xff;
+		printf("Opcode %d\n", packet->opcode);
 	}
 	
 	// Decode the length.
@@ -56,7 +57,7 @@ int decode(struct client *c, struct buffer *b) {
 	 	
 	 	// Decode a variable-sized packet.
 		if (packet->length == -1) {
-			if (b->size - b->position - 1 < 1)
+			if (b->size - (b->position + 1) < 1)
 				return 0; // Not enough data to read the byte
 			packet->length = get_byte(b, X_NONE) & 0xff;
 		}
@@ -65,10 +66,8 @@ int decode(struct client *c, struct buffer *b) {
 		packet->payload->size = packet->length;
 	}
 	
-	printf("length: %d", packet->length);
-	
 	// Ensure that all of the data has arrived.
-	if ((b->size - b->position - 1) < packet->length)
+	if ((b->size - (b->position + 1)) < packet->length)
 		return 0; // Not enough data.
 	
 	// Fill the packet payload with data from the buffer.
@@ -78,6 +77,9 @@ int decode(struct client *c, struct buffer *b) {
 		
 	// TODO: Handle the packet
 	printf("Received packet [opcode:%d length:%d]\n", packet->opcode, packet->length);
+	int i;
+	for (i = 0; i < packet->length; i++)
+		get_byte(b, X_NONE);
 	
 	// Reset the packet for the next initialization.
 	packet->opcode = -1;

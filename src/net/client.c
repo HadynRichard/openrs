@@ -73,7 +73,7 @@ void do_read(struct client *c) {
 		login_decode(c, c->in_buffer);
 	} else if (c->state == LOGGED_IN) {
 		// Decode the game stream.
-		while (c->in_buffer->size - 1 > c->in_buffer->position)
+		while (c->in_buffer->size > c->in_buffer->position)
 			if (!decode(c, c->in_buffer))
 				break;
 	}
@@ -84,6 +84,7 @@ void do_read(struct client *c) {
 		c->in_buffer->data[position++] = (char) get_byte(c->in_buffer, X_NONE);
 	c->in_buffer->position = position;
 	c->in_buffer->size = position - 1;
+	printf("Position: %d\n", c->in_buffer->position);
 }
 
 void do_write(struct client *c) {
