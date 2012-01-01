@@ -15,7 +15,7 @@
 }
 
 void do_isaac(struct isaac_context *isaac) {
-	register int32_t i, x, y;
+	register uint32_t i, x, y;
 	isaac->cc += 1;
 	isaac->bb += isaac->cc;
 	
@@ -51,7 +51,7 @@ void init_isaac(struct isaac_context *isaac, int32_t *seed) {
 	for (i = 0; i < 4; i++)
 		isaac->results->results[i] = seed[i];
 	
-	register int32_t a, b, c, d, e, f, g, h;
+	register uint32_t a, b, c, d, e, f, g, h;
 	a = b = c = d = e = f= g = h = 0x9e3779b9;
 	
 	// Clear out the counters
@@ -120,6 +120,7 @@ void init_isaac(struct isaac_context *isaac, int32_t *seed) {
 }
 
 void free_isaac(struct isaac_context *isaac) {
+	free(isaac->memory);
 	free(isaac->results->results);
 	free(isaac->results);
 	free(isaac);

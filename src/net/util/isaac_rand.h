@@ -1,14 +1,14 @@
 #ifndef ISAAC_RAND
 #define ISAAC_RAND
 
-#include <sys/types.h>
+#include <stdint.h>
 
 /*
  * The results of an ISAAC number generator.
  */
 struct isaac_results {
-	int32_t *results;
-	int32_t position;
+	uint32_t *results;
+	uint32_t position;
 };
 
 /*
@@ -16,10 +16,10 @@ struct isaac_results {
  */
 struct isaac_context {
 	struct isaac_results *results;
-	int32_t *memory;
-	int32_t aa;
-	int32_t bb;
-	int32_t cc;
+	uint32_t *memory;
+	uint32_t aa;
+	uint32_t bb;
+	uint32_t cc;
 };
 
 // Initializes the isaac cipher for the context.

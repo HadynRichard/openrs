@@ -44,11 +44,12 @@ int decode(struct client *c, struct buffer *b) {
 	
 	// Decode the opcode.
 	if (packet->opcode == -1) {
-		if (b->size - (b->position + 1) < 1)
+		if (b->size - b->position < 1) {
+			printf("Not enough data to read the opcode, available:%d\n", (b->size - (b->position + 1)));
 			return 0; // Not enough data to read the byte
+		}
 		packet->opcode = get_byte(b, X_NONE) & 0xff;
 		packet->opcode = packet->opcode - isaac_next_int(c->in_cipher) & 0xff;
-		printf("Opcode %d\n", packet->opcode);
 	}
 	
 	// Decode the length.
@@ -57,8 +58,9 @@ int decode(struct client *c, struct buffer *b) {
 	 	
 	 	// Decode a variable-sized packet.
 		if (packet->length == -1) {
-			if (b->size - (b->position + 1) < 1)
+			if (b->size - b->position < 1) {
 				return 0; // Not enough data to read the byte
+			}
 			packet->length = get_byte(b, X_NONE) & 0xff;
 		}
 		
@@ -67,8 +69,9 @@ int decode(struct client *c, struct buffer *b) {
 	}
 	
 	// Ensure that all of the data has arrived.
-	if ((b->size - (b->position + 1)) < packet->length)
+	if (b->size - b->position < packet->length) {
 		return 0; // Not enough data.
+	}
 	
 	// Fill the packet payload with data from the buffer.
 	int idx;
@@ -77,9 +80,6 @@ int decode(struct client *c, struct buffer *b) {
 		
 	// TODO: Handle the packet
 	printf("Received packet [opcode:%d length:%d]\n", packet->opcode, packet->length);
-	int i;
-	for (i = 0; i < packet->length; i++)
-		get_byte(b, X_NONE);
 	
 	// Reset the packet for the next initialization.
 	packet->opcode = -1;
@@ -92,7 +92,6 @@ int decode(struct client *c, struct buffer *b) {
 void login_decode(struct client *c, struct buffer *b) {
 	struct buffer out;
 	int32_t i, *isaac_seed = malloc(sizeof(int32_t) * 4);
-	int64_t server_key, client_key;
 	switch (c->state) {
 	case CONNECTED:
 		// Ensure that all data has arrived.
@@ -120,8 +119,8 @@ void login_decode(struct client *c, struct buffer *b) {
 		// Proceed with login.
 		put_byte(&out, 0, X_NONE);
 		
-		server_key = rand();
-		put_long(&out, server_key, ENDIAN_BIG, X_NONE);
+		// Send the server seed
+		put_long(&out, rand(), ENDIAN_BIG, X_NONE);
 		
 		// Send the data.
 		client_send(c, &out);
@@ -171,12 +170,10 @@ void login_decode(struct client *c, struct buffer *b) {
 		}
 		
 		// Set up the ISAAC cipher seed.
-		server_key = get_long(b, ENDIAN_BIG, X_NONE);
-		client_key = get_long(b, ENDIAN_BIG, X_NONE);
-		isaac_seed[0] = (int32_t) (client_key >> 32);
-		isaac_seed[1] = (int32_t) (client_key);
-		isaac_seed[2] = (int32_t) (server_key >> 32);
-		isaac_seed[3] = (int32_t) (server_key);
+		isaac_seed[0] = get_int(b, ENDIAN_BIG, X_NONE);
+		isaac_seed[1] = get_int(b, ENDIAN_BIG, X_NONE);
+		isaac_seed[2] = get_int(b, ENDIAN_BIG, X_NONE);
+		isaac_seed[3] = get_int(b, ENDIAN_BIG, X_NONE);
 		c->in_cipher = malloc(sizeof(struct isaac_context));
 		init_isaac(c->in_cipher, isaac_seed);
 		for (i = 0; i < 4; i++)

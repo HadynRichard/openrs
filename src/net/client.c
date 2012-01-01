@@ -67,24 +67,19 @@ void do_read(struct client *c) {
 	for (i = 0; i < amt; i++)
 		put_byte(c->in_buffer, data[i], X_NONE);
 	c->in_buffer->position -= amt;
-
+	
 	// Decode the login process.
-	if (c->state == CONNECTED || c->state == LOGGING_IN) {
+	if (c->state == CONNECTED || c->state == LOGGING_IN)
 		login_decode(c, c->in_buffer);
-	} else if (c->state == LOGGED_IN) {
+	else if (c->state == LOGGED_IN)
 		// Decode the game stream.
 		while (c->in_buffer->size > c->in_buffer->position)
 			if (!decode(c, c->in_buffer))
 				break;
-	}
 	
 	// Shift the unread data to the beginning of the buffer.
-	int position = 0;
-	for (i = c->in_buffer->position; i < c->in_buffer->size - 1; i++)
-		c->in_buffer->data[position++] = (char) get_byte(c->in_buffer, X_NONE);
-	c->in_buffer->position = position;
-	c->in_buffer->size = position - 1;
-	printf("Position: %d\n", c->in_buffer->position);
+	c->in_buffer->position = 0;
+	c->in_buffer->size = 0;
 }
 
 void do_write(struct client *c) {
