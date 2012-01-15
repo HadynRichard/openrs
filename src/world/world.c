@@ -1,5 +1,8 @@
 #include "world.h"
 
+#include "script_loader.h"
+#include "protocol.h"
+
 #include <stdlib.h>
 
 void world_register(struct player *p) {
@@ -31,6 +34,12 @@ void world_free() {
 }
 
 void world_tick() {
+	int i;
+	for (i = 1; i <= MAX_PLAYERS; i++)
+		if (players[i]) {
+			PyObject *func = PyDict_GetItemString(py_dict, "player_tick");
+			PyObject_CallFunction(func, "l", players[i]);
+		}
 }
 
 void world_sync() {

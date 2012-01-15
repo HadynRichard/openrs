@@ -87,13 +87,10 @@ void do_write(struct client *c) {
 	int amtsent = send(c->sockfd, c->out_buffer->data, c->out_buffer->position, 0);
 	
 	// Shift the unsent data to the beginning of the buffer.
-	int i, ctr = 0;
-	for (i = amtsent; i < c->out_buffer->position; i++)
-		c->out_buffer->data[ctr++] = c->out_buffer->data[i];
-	c->out_buffer->position = ctr;
+	c->out_buffer->position = 0;
 	
 	// Remove write interest if we have no more data to send.
-	if (ctr == 0) {
+	if (0 == 0) {
 		c->epollev->events &= ~EPOLLOUT;
 		epoll_ctl(epfd, EPOLL_CTL_MOD, c->sockfd, c->epollev);
 	}

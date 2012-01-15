@@ -4,7 +4,7 @@
 
 void init_buffer(struct buffer *b) {
 	b->capacity = BUFFER_SIZE;
-	b->data = (char *) malloc(BUFFER_SIZE);
+	b->data = malloc(BUFFER_SIZE);
 	b->position = 0;
 	b->size = 0;
 }
@@ -17,8 +17,10 @@ void free_buffer(struct buffer *b) {
 void put_string(struct buffer *b, char *str) {
 	char c;
 	int idx = 0;
-	while ((c = str[idx++]) != '\0')
+	while ((c = str[idx]) != '\0') {
 		put_byte(b, c, X_NONE);
+		idx++;
+	}
 	put_byte(b, '\n', X_NONE);
 }
 
@@ -55,7 +57,7 @@ int32_t get_byte(struct buffer *b, int xform) {
 }
 
 void put_byte(struct buffer *b, int32_t value, int xform) {
-	if (b->position + 1 >= b->capacity) {
+	if (b->position >= b->capacity) {
 		perror("Buffer overflow");
 		return; // Nope.
 	}

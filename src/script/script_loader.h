@@ -3,7 +3,7 @@
 
 #include <Python.h>
 
-#define SCRIPTS_DIR "data/scripts"
+#define SCRIPTS_DIR "data/scripts/"
 
 PyObject *py_module;
 PyObject *py_dict;

@@ -36,6 +36,7 @@ void init_client(struct client *c);
 // Frees the memory of a client.
 void free_client(struct client *c);
 
+// Sends a buffer to the client
 void client_send(struct client *c, struct buffer *b);
 
 // Performs a read operation.

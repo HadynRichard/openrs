@@ -1,6 +1,7 @@
 #include "script_loader.h"
 
 #include "decoder.h"
+#include "protocol.h"
 
 #include <stdio.h>
 #include <stdlib.h>

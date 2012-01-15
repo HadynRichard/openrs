@@ -1,5 +1,5 @@
-#ifndef _317_DECODER
-#define _317_DECODER
+#ifndef DECODER_H
+#define DECODER_H
 
 #include "client.h"
 #include "buffer.h"
@@ -11,4 +11,4 @@ int decode(struct client *c, struct buffer *b);
 // Decodes the login process.
 void login_decode(struct client *c, struct buffer *b);
 
-#endif // #ifndef _317_DECODER
+#endif // #ifndef DECODER_H

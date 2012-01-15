@@ -5,6 +5,7 @@
 void init_packet(struct packet *p) {
 	p->opcode = -1;
 	p->length = -1;
+	p->length_type = LENGTH_FIXED;
 	p->payload = malloc(sizeof(struct packet));
 	init_buffer(p->payload);
 }

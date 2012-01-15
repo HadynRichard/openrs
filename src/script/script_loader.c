@@ -1,48 +1,28 @@
 #include "script_loader.h"
 
 #include <stdio.h>
-#include <dirent.h>
+#include <sys/stat.h>
+#include <ftw.h>
 
 #include "libpyapi.h"
 
-int load_from(PyObject *py_dict, char* path) {
-	char apath[8192];
-	DIR *dir;
-	struct dirent *entry;
-	struct stat attr;
-	int result;
-	if ((dir = opendir(path)) != NULL) {
-		while ((entry = readdir(dir)) != NULL) {
-			memset(apath, '\0', sizeof(apath));
-			strcpy(apath, path);
-			strcat(apath, "/");
-			strcat(apath, (char *) entry->d_name);
-			if (entry->d_type == DT_REG) {
-				FILE *file = fopen(apath, "r");
-				
-				// Check the file extension
-				if (strstr(apath, ".pyc"))
-					continue;
-				
-				// Run the script.
-				if (PyRun_File(file, apath, Py_file_input, py_dict, py_dict) == NULL) {
-					printf("\n\nError parsing Python script:\n");
-					PyErr_Print(); // Print the error for debugging purposes.
-					return 0;
-				}
-			} else if (entry->d_type == DT_DIR) {
-				if (strstr(apath, "..") || entry->d_name[0] == '.') {
-					continue;
-				} else {
-					return load_from(py_dict, apath);
-				}
-			}
-		}
-	} else {
-		printf("opendir(%s) failed\n", path);
+int handle_file(char *name, struct stat *status, int type) {
+	// Check the extension and make sure it's a Python script
+	char *ext = strrchr(name, '.');
+	if (!ext || ext == name || strcmp(ext, ".py") != 0) {
+		return 0; // Continue
 	}
-	closedir(dir);
-	return 1;
+	
+	// Load the Python script into the interpreter
+	FILE *file = fopen(name, "r");
+	if (PyRun_File(file, name, Py_file_input, py_dict, py_dict) == NULL) {
+		printf("\n\nError parsing Python script:\n");
+		PyErr_Print(); // Print the error for debugging purposes.
+		return -1;
+	}
+	fclose(file);
+	
+	return 0;
 }
 
 int load_scripts() {
@@ -71,5 +51,7 @@ int load_scripts() {
 	PySys_SetPath(newpath);
 	free(newpath);
 	
-	return load_from(py_dict, SCRIPTS_DIR);
+	// Walk the file tree and load scripts
+	ftw(SCRIPTS_DIR, (__ftw_func_t) handle_file, 128);
+	return 1;
 }
