@@ -43,6 +43,11 @@ void world_tick() {
 }
 
 void world_sync() {
+	int i;
+	for (i = 1; i <= MAX_PLAYERS; i++)
+		if (players[i]) {
+			update_players(players[i]);
+		}
 }
 
 void world_reset() {

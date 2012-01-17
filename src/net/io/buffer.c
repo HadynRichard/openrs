@@ -2,6 +2,16 @@
 
 #include <stdlib.h>
 
+static const int BIT_MASK_OUT[] = {
+	0, 1, 3, 7, 15,
+	31, 63, 127, 255, 511,
+	1023, 2047, 4095, 8191, 16383,
+	32767, 65535, 0x1FFFF, 0x3FFFF, 0x7FFFF,
+	0xFFFFF, 0x1FFFFF, 0x3FFFFF, 0x7FFFFF, 0xFFFFFF,
+	0x1FFFFFF, 0x3FFFFFF, 0x7FFFFFF, 0xFFFFFFF, 0x1FFFFFFF,
+	0x3FFFFFFF, 0x7FFFFFFF, -1
+};
+
 void init_buffer(struct buffer *b) {
 	b->capacity = BUFFER_SIZE;
 	b->data = malloc(BUFFER_SIZE);
@@ -12,6 +22,39 @@ void init_buffer(struct buffer *b) {
 void free_buffer(struct buffer *b) {
 	free(b->data);
 	free(b);
+}
+
+void bit_access_open(struct buffer *b) {
+	b->bit_position = b->position * 8;
+}
+
+void bit_access_close(struct buffer *b) {
+	 b->position = (b->bit_position + 7) / 8;
+}
+
+void put_bits(struct buffer *b, int amt, int value) {
+	int byte_pos = b->bit_position >> 3;
+	int bit_offset = 8 - (b->bit_position & 7);
+	b->bit_position += amt;
+
+	if ((b->capacity - b->position) < (amt / 8)) {
+		perror("WARNING: Buffer overflow in put_bits");
+		return; // Not enough space
+	}
+
+	for (; amt > bit_offset; bit_offset = 8) {
+		b->data[byte_pos] &= ~BIT_MASK_OUT[bit_offset];
+		b->data[byte_pos++] |= (value >> (amt - bit_offset)) & BIT_MASK_OUT[bit_offset];
+		amt -= bit_offset;
+	}
+
+	if (amt == bit_offset) {
+		b->data[byte_pos] &= ~BIT_MASK_OUT[bit_offset];
+		b->data[byte_pos] |= value & BIT_MASK_OUT[bit_offset];
+	} else {
+		b->data[byte_pos] &= ~(BIT_MASK_OUT[amt] << (bit_offset - amt));
+		b->data[byte_pos] |= (value & BIT_MASK_OUT[amt]) << (bit_offset - amt);
+	}
 }
 
 void put_string(struct buffer *b, char *str) {
@@ -37,7 +80,7 @@ char *get_string(struct buffer *b) {
 
 int32_t get_byte(struct buffer *b, int xform) {
 	if (b->position + 1 >= b->capacity) {
-		perror("Buffer underflow");
+		perror("WARNING: Buffer underflow in get_byte");
 		return 0;
 	}
 	int32_t value = 0;
@@ -58,7 +101,7 @@ int32_t get_byte(struct buffer *b, int xform) {
 
 void put_byte(struct buffer *b, int32_t value, int xform) {
 	if (b->position >= b->capacity) {
-		perror("Buffer overflow");
+		perror("WARNING: Buffer overflow in put_byte");
 		return; // Nope.
 	}
 	switch (xform) {

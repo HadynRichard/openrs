@@ -19,6 +19,7 @@ struct buffer {
 	char *data; // The actual character array.
 	int capacity; // The overall capacity of the buffer.
 	int position; // The current position in the buffer.
+	int bit_position;
 };
 
 // Initializes a buffer.
@@ -26,6 +27,15 @@ void init_buffer(struct buffer *b);
 
 // Frees a buffer.
 void free_buffer(struct buffer *b);
+
+// Opens bit access to the buffer.
+void bit_access_open(struct buffer *b);
+
+// Closes bit access to the buffer.
+void bit_access_close(struct buffer *b);
+
+// Puts bits into the buffer.
+void put_bits(struct buffer *b, int amt, int value);
 
 // Puts a string into the buffer.
 void put_string(struct buffer *b, char *str);
